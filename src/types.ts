@@ -20,8 +20,9 @@ export interface RunFilters {
 }
 
 export interface LocationConfig {
-  searchString: string;   // typed into meetup/eventbrite location inputs
-  lumaUrl: string;        // direct city URL for luma
+  searchString: string;   // human-readable; used by eventbrite location input
+  meetupSlug: string;     // meetup URL slug, e.g. "us--ca--San+Francisco"
+  lumaUrl: string;        // direct city URL for luma, e.g. "https://luma.com/sf"
 }
 
 export interface CalendarConfig {
@@ -35,11 +36,17 @@ export interface RecommendationConfig {
   enabled: boolean;
 }
 
+export interface ScrapersConfig {
+  meetup?: { maxEvents?: number };
+  // luma / eventbrite per-source knobs can be added here as they need them.
+}
+
 export interface Config {
   location: LocationConfig;
   filters: RunFilters;
   calendar: CalendarConfig;
   recommendation: RecommendationConfig;
+  scrapers?: ScrapersConfig;
 }
 
 export interface ScrapedEvent {
