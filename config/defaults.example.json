@@ -19,6 +19,7 @@
     "enabled": true
   },
   "scrapers": {
-    "meetup": { "maxEvents": 50 }
+    "meetup": { "maxEvents": 50 },
+    "luma": { "maxEvents": 50 }
   }
 }

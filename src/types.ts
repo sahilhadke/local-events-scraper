@@ -38,7 +38,8 @@ export interface RecommendationConfig {
 
 export interface ScrapersConfig {
   meetup?: { maxEvents?: number };
-  // luma / eventbrite per-source knobs can be added here as they need them.
+  luma?: { maxEvents?: number };
+  // eventbrite per-source knobs can be added here as they need them.
 }
 
 export interface Config {
