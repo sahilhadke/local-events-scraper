@@ -1,0 +1,19 @@
+# Personal event recommendations
+
+These rules are sent to the LLM as a system prompt during the recommendation step
+(`src/recommend.ts`). Each scraped event is tagged `recommended: true` or
+`recommended: false` based on how well it matches.
+
+Write in plain English. Be specific. Examples below — replace with your own.
+
+## Prefer
+- Hands-on workshops, hack nights, build sessions
+- Dev meetups (AI/ML, web, systems, devtools)
+- Free events
+- Evenings 6–9pm, weekends afternoons
+
+## Avoid
+- Networking-only mixers with no talks or activity
+- MLM, crypto-pump, sales-pitch events
+- Anything explicitly religious or political
+- Events that require RSVP > $40

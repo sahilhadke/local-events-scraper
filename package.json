@@ -1,0 +1,31 @@
+{
+  "name": "local-events-scraper",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "launch-brave": "start \"\" \"%LOCALAPPDATA%\\BraveSoftware\\Brave-Browser\\Application\\brave.exe\" --remote-debugging-port=9222 --user-data-dir=\"C:\\Users\\sahil\\Desktop\\Projects\\amc-book-movie\\playwright\\.auth\\brave-profile\"",
+    "connect": "ts-node src/scripts/connect.ts",
+    "example": "ts-node src/scripts/example.ts",
+    "scrape": "ts-node src/scripts/run.ts",
+    "scrape:meetup": "ts-node src/scripts/run.ts -- --only meetup",
+    "scrape:luma": "ts-node src/scripts/run.ts -- --only luma",
+    "scrape:eventbrite": "ts-node src/scripts/run.ts -- --only eventbrite",
+    "scrape-only": "ts-node src/scripts/scrape-only.ts",
+    "sync-calendar": "ts-node src/scripts/sync-calendar.ts",
+    "auth-calendar": "ts-node src/auth/authCalendar.ts",
+    "build": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.100.1",
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0",
+    "minimist": "^1.2.8",
+    "patchright": "^1.59.4"
+  },
+  "devDependencies": {
+    "@types/minimist": "^1.2.5",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}

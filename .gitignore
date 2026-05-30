@@ -1,0 +1,14 @@
+node_modules/
+dist/
+output/
+screenshots/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+.vscode/
+.idea/
+
+config/defaults.json
+config/personal-recommendations.md
