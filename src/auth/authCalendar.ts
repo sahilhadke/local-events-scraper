@@ -50,33 +50,42 @@ function upsertEnvVar(file: string, key: string, value: string) {
   fs.writeFileSync(file, content);
 }
 
-async function maybeCreateCalendar(authClient: any): Promise<string | null> {
+const BUCKET_CALENDARS: { bucket: 'recommended' | 'free' | 'rest'; summary: string }[] = [
+  { bucket: 'recommended', summary: 'Recommended Local Events' },
+  { bucket: 'free', summary: 'Free Local Events' },
+  { bucket: 'rest', summary: 'Rest of the Local Events' },
+];
+
+async function maybeCreateCalendar(authClient: any): Promise<void> {
   if (!fs.existsSync(DEFAULTS_PATH)) {
     console.log('No config/defaults.json found — skipping calendar creation. Copy defaults.example.json and re-run.');
-    return null;
+    return;
   }
   const config = JSON.parse(fs.readFileSync(DEFAULTS_PATH, 'utf-8')) as Config;
-  if (config.calendar.calendarId) {
-    console.log(`Calendar already configured: ${config.calendar.calendarId}`);
-    return config.calendar.calendarId;
+  if (!config.calendar.calendarIds) {
+    config.calendar.calendarIds = { recommended: '', free: '', rest: '' };
   }
 
   const cal = google.calendar({ version: 'v3', auth: authClient });
-  console.log('Creating dedicated "Local Events" calendar...');
-  const created = await cal.calendars.insert({
-    requestBody: {
-      summary: 'Local Events',
-      description: 'Events scraped by local-events-scraper. Recommended events are color-coded.',
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    },
-  });
-  const id = created.data.id;
-  if (!id) throw new Error('Calendar created but no id returned.');
-
-  config.calendar.calendarId = id;
-  fs.writeFileSync(DEFAULTS_PATH, JSON.stringify(config, null, 2));
-  console.log(`Calendar created and saved to defaults.json: ${id}`);
-  return id;
+  for (const { bucket, summary } of BUCKET_CALENDARS) {
+    if (config.calendar.calendarIds[bucket]) {
+      console.log(`${summary} already configured: ${config.calendar.calendarIds[bucket]}`);
+      continue;
+    }
+    console.log(`Creating "${summary}" calendar...`);
+    const created = await cal.calendars.insert({
+      requestBody: {
+        summary,
+        description: 'Events scraped by local-events-scraper.',
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      },
+    });
+    const id = created.data.id;
+    if (!id) throw new Error(`Calendar "${summary}" created but no id returned.`);
+    config.calendar.calendarIds[bucket] = id;
+    fs.writeFileSync(DEFAULTS_PATH, JSON.stringify(config, null, 2));
+    console.log(`  saved to defaults.json: ${id}`);
+  }
 }
 
 const server = http.createServer(async (req, res) => {

@@ -20,33 +20,32 @@ export interface RunFilters {
 }
 
 export interface LocationConfig {
-  searchString: string;   // human-readable; used by eventbrite location input
-  meetupSlug: string;     // meetup URL slug, e.g. "us--ca--San+Francisco"
-  lumaUrl: string;        // direct city URL for luma, e.g. "https://luma.com/sf"
+  searchString: string;     // human label, also the fallback source for eventbriteSlug
+  meetupSlug: string;       // meetup URL slug, e.g. "us--ca--San+Francisco"
+  lumaUrl: string;          // direct city URL for luma, e.g. "https://luma.com/sf"
+  eventbriteSlug?: string;  // eventbrite /d/<slug>/ city slug, e.g. "ca--san-francisco"; derived from searchString if omitted
 }
+
+// Events are partitioned into exactly one bucket, with precedence
+// recommended > free > rest (see bucketFor in calendar.ts).
+export type EventBucket = 'recommended' | 'free' | 'rest';
 
 export interface CalendarConfig {
-  calendarId: string;     // empty until auth-calendar populates it
+  calendarIds: Record<EventBucket, string>;  // empty strings until auth-calendar populates them
   colorRecommended: string;
   colorOther: string;
-}
-
-export interface RecommendationConfig {
-  model: string;
-  enabled: boolean;
 }
 
 export interface ScrapersConfig {
   meetup?: { maxEvents?: number };
   luma?: { maxEvents?: number };
-  // eventbrite per-source knobs can be added here as they need them.
+  eventbrite?: { maxEvents?: number };
 }
 
 export interface Config {
   location: LocationConfig;
   filters: RunFilters;
   calendar: CalendarConfig;
-  recommendation: RecommendationConfig;
   scrapers?: ScrapersConfig;
 }
 

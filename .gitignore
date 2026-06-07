@@ -12,3 +12,6 @@ screenshots/
 
 config/defaults.json
 config/personal-recommendations.md
+
+# Run logs that may contain real calendar IDs
+clear-log.txt

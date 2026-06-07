@@ -10,16 +10,17 @@
     "distanceMiles": 10
   },
   "calendar": {
-    "calendarId": "",
+    "calendarIds": {
+      "recommended": "",
+      "free": "",
+      "rest": ""
+    },
     "colorRecommended": "10",
     "colorOther": "8"
   },
-  "recommendation": {
-    "model": "claude-haiku-4-5-20251001",
-    "enabled": true
-  },
   "scrapers": {
     "meetup": { "maxEvents": 50 },
-    "luma": { "maxEvents": 50 }
+    "luma": { "maxEvents": 50 },
+    "eventbrite": { "maxEvents": 50 }
   }
 }

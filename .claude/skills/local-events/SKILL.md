@@ -1,31 +1,35 @@
 ---
 name: local-events
-description: Scrape upcoming local events from meetup, luma, and eventbrite; tag each with recommended:true/false based on config/personal-recommendations.md; sync everything to a dedicated Google Calendar (color-coded by recommendation); emit a brief results.md summary. Invoke when the user types "/local-events", asks for upcoming events, asks what's happening nearby this week/weekend, or asks to populate their events calendar.
-argument-hint: [--day today|tomorrow|this-week|this-weekend|next-week|starting-soon|any] [--type in-person|online|any] [--distance 1|2|5|10|25]
-allowed-tools: [Bash, Read]
+description: Two-mode local events skill. Mode 1 (--sync, default): scrape upcoming events from Meetup, Luma, and Eventbrite, tag each as recommended or not, and sync into three Google Calendars. Mode 2 (--clear): delete all local-events-scraper events from all three calendars. Invoke when the user types "/local-events", asks for upcoming events, asks what's happening nearby, asks to populate their calendar, or asks to clear/remove all local events from their calendar.
+argument-hint: --sync [--day today|tomorrow|this-week|this-weekend|next-week|starting-soon|any] [--type in-person|online|any] [--distance 1|2|5|10|25] | --clear
+allowed-tools: [Bash, Read, Write, Edit]
 disable-model-invocation: false
 ---
 
 # local-events
 
-Runs the full scraper -> recommend -> calendar pipeline in `C:\Users\sahil\Desktop\Projects\local-events-scraper`. Defaults for every filter come from `config/defaults.json`; CLI args override on a per-run basis.
+Pipeline in `C:\Users\sahil\Desktop\Projects\local-events-scraper`.
 
-## Step 0 — Preflight
+## Two Modes
 
-Verify Brave is reachable on the CDP debug port:
+The skill takes one top-level mode argument:
 
-```bash
-cd "C:\Users\sahil\Desktop\Projects\local-events-scraper" && npx ts-node src/scripts/connect.ts
-```
+| Argument | Action |
+|---|---|
+| `--sync` (default) | Scrape → Recommend → Sync to calendar |
+| `--clear` | Delete all local-events-scraper events from all three calendars |
 
-If this fails with "Could not connect to Brave", tell the user:
-> "Brave isn't running with the debug port. Run `npm run launch-brave` from `local-events-scraper` (or `amc-book-movie` — same profile) and try again."
+---
 
-Do **not** silently launch Brave — the user manages browser lifecycle.
+## MODE 1: `--sync` (default)
 
-## Step 1 — Parse args
+Run this when the user wants to find events, populate their calendar, or refresh what's there.
 
-Skill args map directly to CLI flags. Pass through anything the user provides; omit the rest (the script falls back to `config/defaults.json`).
+### Step 0 — Preflight
+
+No manual browser step needed. The scraper auto-launches Brave with the CDP debug port + shared profile. If it fails because another Brave window already owns the shared profile, tell the user to close the other Brave window and retry.
+
+### Step 1 — Parse args
 
 | Skill arg | CLI flag | Allowed values |
 |---|---|---|
@@ -33,27 +37,59 @@ Skill args map directly to CLI flags. Pass through anything the user provides; o
 | Type | `--type` | `in-person` (default), `online`, `any` |
 | Distance | `--distance` | `1`, `2`, `5`, `10` (default), `25` |
 
-## Step 2 — Run the pipeline
+### Step 2 — Scrape
 
 ```bash
-cd "C:\Users\sahil\Desktop\Projects\local-events-scraper" && npm run scrape -- <args>
+cd "C:\Users\sahil\Desktop\Projects\local-events-scraper" && npm run scrape-only -- <args>
 ```
 
-Capture stdout. The script ends by dumping `output/results.md` between `----- results.md -----` markers — that is the summary the user wants to see.
+This writes `output/events-YYYY-MM-DD.json` and `results.md`. It does NOT recommend or sync.
 
-## Step 3 — Reply
+### Step 3 — Recommend (you do this)
 
-Always reply to the user with the contents of `output/results.md` (extract from between the markers, or `Read` the file directly). On phone via Claude Dispatch this is the entire UX; on desktop it's still the most useful summary.
+1. `Read` `config/personal-recommendations.md` (fall back to `.md.example` if it doesn't exist).
+2. `Read` the latest `output/events-*.json`.
+3. For every event, decide `recommended` (true/false) and write a one-sentence `recommendedReason`. Be strict but fair.
+4. Write the updated array back to the **same** JSON file, preserving `{ generatedAt, events: [...] }`. Only add/replace `recommended` and `recommendedReason`. Match by `sourceId`.
 
-Mention briefly:
-- How many events were scraped + how many are recommended.
-- Whether calendar sync succeeded (counts from the `[calendar]` log line).
-- Path to `output/events-YYYY-MM-DD.json` if the user wants raw data.
+Bucket logic (derived downstream from your tags):
+- `recommended: true` → **Recommended Local Events** calendar
+- `recommended: false` + no `priceText` → **Free Local Events** calendar
+- `recommended: false` + has `priceText` → **Rest of the Local Events** calendar
 
-## Step 4 — Failures
+### Step 4 — Sync
 
-If `npm run scrape` exits non-zero:
-- Surface the error message from stderr.
-- If it mentions `GOOGLE_REFRESH_TOKEN` -> tell the user to run `npm run auth-calendar`.
-- If it mentions a specific scraper (e.g. `[meetup] failed:`), name the source so the user knows which scraper to debug.
-- Do NOT retry blindly — these scrapers can hit anti-bot challenges.
+```bash
+cd "C:\Users\sahil\Desktop\Projects\local-events-scraper" && npm run sync-calendar
+```
+
+Reads the tagged JSON and upserts each event into its bucket calendar (deduped by source + sourceId).
+
+### Step 5 — Reply
+
+Summarize:
+- How many events scraped and how many recommended.
+- Per-bucket calendar counts from the `[calendar]` log line.
+- Path to `output/events-YYYY-MM-DD.json` for raw data.
+
+### Step 6 — Failures
+
+- **Scrape failure**: name the source. Do NOT retry blindly.
+- **Sync failure** with `GOOGLE_REFRESH_TOKEN` error → tell user to run `npm run auth-calendar`.
+- **Missing calendar IDs** → run `npm run auth-calendar`.
+
+---
+
+## MODE 2: `--clear`
+
+Run this when the user wants to remove all local events from their Google Calendars.
+
+```bash
+cd "C:\Users\sahil\Desktop\Projects\local-events-scraper" && npm run clear-calendars
+```
+
+This pages through all three calendars (Recommended / Free / Rest), finds every event tagged `scraper=local-events-scraper`, and deletes them.
+
+Reply with the result from the `[calendar] clear complete: deleted=… failed=…` log line.
+
+If it errors with `GOOGLE_REFRESH_TOKEN` → tell the user to run `npm run auth-calendar`.

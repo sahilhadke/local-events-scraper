@@ -23,7 +23,6 @@ export interface CliOverrides {
   distanceMiles?: DistanceMiles;
   only?: EventSource[];      // restrict to a subset of scrapers (debug)
   skipCalendar?: boolean;
-  skipRecommend?: boolean;
 }
 
 export function loadConfig(): Config {
@@ -40,7 +39,7 @@ export function parseCliOverrides(argv: string[]): CliOverrides {
   const cleaned = argv[0] === '--' ? argv.slice(1) : argv;
   const args = minimist(cleaned, {
     string: ['day', 'type', 'distance', 'only'],
-    boolean: ['skip-calendar', 'skip-recommend'],
+    boolean: ['skip-calendar'],
   });
 
   const overrides: CliOverrides = {};
@@ -78,7 +77,6 @@ export function parseCliOverrides(argv: string[]): CliOverrides {
   }
 
   if (args['skip-calendar']) overrides.skipCalendar = true;
-  if (args['skip-recommend']) overrides.skipRecommend = true;
 
   return overrides;
 }

@@ -1,5 +1,11 @@
 /**
- * Full pipeline: scrape -> recommend -> write JSON + results.md -> sync calendar -> stdout dump.
+ * Scrape -> write JSON + results.md -> sync calendar -> stdout dump.
+ *
+ * Recommendation tagging is NOT done here — it's handled by the Claude Code
+ * `local-events` skill between scrape and sync (it reads the JSON, tags events
+ * against config/personal-recommendations.md, then runs `npm run sync-calendar`).
+ * This script syncs untagged events straight away, so use it only when you don't
+ * need recommendations; the skill drives `scrape-only` + `sync-calendar` instead.
  *
  *   npm run scrape -- --day today --type in-person --distance 10
  */
@@ -9,7 +15,6 @@ dotenv.config();
 import { getPage, detach } from '../browser';
 import { applyOverrides, loadConfig, parseCliOverrides } from '../config';
 import { scrapersBySource } from '../scrapers';
-import { recommendEvents } from '../recommend';
 import { syncEventsToCalendar } from '../calendar';
 import { writeEventsJson, writeResults } from '../results';
 import { eventMatchesDayFilter } from '../utils/dates';
@@ -50,17 +55,13 @@ async function main(): Promise<void> {
     await detach(session);
   }
 
-  const tagged = overrides.skipRecommend || !config.recommendation.enabled
-    ? all
-    : await recommendEvents(all, config);
-
-  const jsonPath = writeEventsJson(tagged);
-  const { path: mdPath, content: mdContent } = writeResults(tagged, config);
+  const jsonPath = writeEventsJson(all);
+  const { path: mdPath, content: mdContent } = writeResults(all, config);
   log(`Wrote ${jsonPath}`);
   log(`Wrote ${mdPath}`);
 
   if (!overrides.skipCalendar) {
-    await syncEventsToCalendar(tagged, config);
+    await syncEventsToCalendar(all, config);
   } else {
     log('[calendar] skipped via --skip-calendar');
   }

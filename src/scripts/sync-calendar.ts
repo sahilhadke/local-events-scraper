@@ -19,7 +19,8 @@ async function main(): Promise<void> {
     log('No events in latest output/events-*.json — nothing to sync.');
     return;
   }
-  log(`Syncing ${events.length} events to calendar ${config.calendar.calendarId || '(unset)'}`);
+  const ids = config.calendar.calendarIds;
+  log(`Syncing ${events.length} events into calendars recommended=${ids.recommended || '(unset)'} free=${ids.free || '(unset)'} rest=${ids.rest || '(unset)'}`);
   await syncEventsToCalendar(events, config);
 }
 

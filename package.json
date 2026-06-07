@@ -11,7 +11,11 @@
     "scrape:luma": "ts-node src/scripts/run.ts -- --only luma",
     "scrape:eventbrite": "ts-node src/scripts/run.ts -- --only eventbrite",
     "scrape-only": "ts-node src/scripts/scrape-only.ts",
+    "fetch:meetup": "ts-node src/scripts/fetch.ts --source meetup",
+    "fetch:luma": "ts-node src/scripts/fetch.ts --source luma",
+    "fetch:eventbrite": "ts-node src/scripts/fetch.ts --source eventbrite",
     "sync-calendar": "ts-node src/scripts/sync-calendar.ts",
+    "clear-calendars": "ts-node src/scripts/clear-calendars.ts",
     "auth-calendar": "ts-node src/auth/authCalendar.ts",
     "build": "tsc --noEmit"
   },
